@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wanderlust — Travel Blog</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  /* === RESET & BASE === */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sand: #F5EFE0;
+    --ink: #1A1410;
+    --rust: #C4521A;
+    --rust-light: #E8845A;
+    --cream: #FAF6EE;
+    --muted: #7A6F62;
+    --border: rgba(26,20,16,0.12);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    overflow-x: hidden;
+  }
+
+  /* === PRELOADER === */
+  #preloader {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--ink);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 28px;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+  }
+  #preloader.hidden { opacity: 0; visibility: hidden; }
+
+  .preloader-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px; color: var(--sand);
+    letter-spacing: 0.08em;
+    animation: fadeInUp 0.6s ease both;
+  }
+  .preloader-bar {
+    width: 200px; height: 1px;
+    background: rgba(245,239,224,0.15);
+    position: relative; overflow: hidden;
+  }
+  .preloader-bar::after {
+    content: '';
+    position: absolute; top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: var(--rust-light);
+    animation: barLoad 2.2s ease forwards;
+  }
+  @keyframes barLoad {
+    to { left: 0; }
+  }
+  .preloader-dots { display: flex; gap: 8px; }
+  .preloader-dots span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--rust-light); opacity: 0.4;
+    animation: dotPulse 1.2s ease-in-out infinite;
+  }
+  .preloader-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .preloader-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dotPulse {
+    0%, 100% { opacity: 0.3; transform: translateY(0); }
+    50% { opacity: 1; transform: translateY(-5px); }
+  }
+
+  /* === NAV === */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 20px 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    backdrop-filter: blur(12px);
+    background: rgba(250,246,238,0.85);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; color: var(--ink);
+    text-decoration: none; letter-spacing: 0.04em;
+  }
+
+  .nav-links { display: flex; gap: 36px; list-style: none; }
+  .nav-links a {
+    font-size: 13px; font-weight: 500; color: var(--muted);
+    text-decoration: none; letter-spacing: 0.06em; text-transform: uppercase;
+    position: relative; padding-bottom: 3px;
+    transition: color 0.25s ease;
+  }
+  .nav-links a::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0;
+    width: 0; height: 1px;
+    background: var(--rust);
+    transition: width 0.3s ease;
+  }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-links a:hover::after { width: 100%; }
+
+  /* burger */
+  .burger { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 4px; }
+  .burger span { display: block; width: 22px; height: 1.5px; background: var(--ink); transition: all 0.3s ease; }
+  .burger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+  .burger.open span:nth-child(2) { opacity: 0; }
+  .burger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+  /* === HERO === */
+  .hero {
+    min-height: 100vh;
+    display: grid; grid-template-columns: 1fr 1fr;
+    padding-top: 80px;
+  }
+
+  .hero-left {
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 80px 60px 80px 60px;
+  }
+
+  .hero-tag {
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--rust); font-weight: 500; margin-bottom: 24px;
+    animation: fadeInUp 0.7s 0.3s ease both;
+  }
+
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(44px, 5vw, 72px);
+    line-height: 1.1; font-weight: 700;
+    color: var(--ink); margin-bottom: 28px;
+    animation: fadeInUp 0.7s 0.5s ease both;
+  }
+  .hero-title em { font-style: italic; color: var(--rust); }
+
+  .hero-desc {
+    font-size: 16px; line-height: 1.75;
+    color: var(--muted); max-width: 440px; margin-bottom: 44px;
+    font-weight: 300;
+    animation: fadeInUp 0.7s 0.7s ease both;
+  }
+
+  .hero-actions {
+    display: flex; gap: 16px; align-items: center;
+    animation: fadeInUp 0.7s 0.9s ease both;
+  }
+
+  /* === RIPPLE BUTTON === */
+  .btn-primary {
+    padding: 14px 32px;
+    background: var(--rust);
+    color: #fff;
+    border: none; border-radius: 3px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 500; letter-spacing: 0.04em;
+    cursor: pointer;
+    position: relative; overflow: hidden;
+    transition: background 0.3s ease, transform 0.15s ease;
+    animation: pulse 2.5s ease-in-out infinite;
+  }
+  .btn-primary:hover { background: var(--rust-light); transform: translateY(-1px); animation: none; }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(196,82,26,0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(196,82,26,0); }
+  }
+
+  .ripple-effect {
+    position: absolute; border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+    transform: scale(0);
+    animation: ripple 0.6s linear;
+    pointer-events: none;
+  }
+  @keyframes ripple { to { transform: scale(4); opacity: 0; } }
+
+  .btn-ghost {
+    padding: 14px 28px;
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 500; letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: border-color 0.3s ease, color 0.3s ease;
+  }
+  .btn-ghost:hover { border-color: var(--rust); color: var(--rust); }
+
+  /* hero right — parallax image area */
+  .hero-right {
+    position: relative; overflow: hidden;
+    background: var(--sand);
+  }
+  .hero-bg {
+    position: absolute; inset: -20%;
+    background: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&q=80') center/cover no-repeat;
+    animation: parallaxDrift 20s ease-in-out infinite alternate;
+  }
+  @keyframes parallaxDrift {
+    from { transform: scale(1.08) translateY(0); }
+    to   { transform: scale(1.08) translateY(-40px); }
+  }
+  .hero-right-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(250,246,238,0.3) 0%, rgba(26,20,16,0.25) 100%);
+  }
+  .hero-stats {
+    position: absolute; bottom: 40px; left: 40px;
+    display: flex; gap: 40px;
+  }
+  .stat { color: #fff; }
+  .stat-num { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; }
+  .stat-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.75; margin-top: 2px; }
+
+  /* scroll indicator */
+  .scroll-hint {
+    position: absolute; bottom: 40px; right: 40px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .scroll-hint span { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.7); }
+  .scroll-line {
+    width: 1px; height: 40px; background: rgba(255,255,255,0.3); position: relative; overflow: hidden;
+  }
+  .scroll-line::after {
+    content: '';
+    position: absolute; top: -100%; left: 0;
+    width: 100%; height: 100%; background: #fff;
+    animation: scrollDrop 1.5s ease-in-out infinite;
+  }
+  @keyframes scrollDrop { to { top: 200%; } }
+
+  /* === SECTION COMMONS === */
+  section { padding: 100px 60px; }
+  .section-tag {
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--rust); font-weight: 500; margin-bottom: 16px;
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(32px, 3.5vw, 48px);
+    line-height: 1.15; margin-bottom: 16px;
+  }
+  .section-sub {
+    font-size: 15px; line-height: 1.7; color: var(--muted); font-weight: 300; max-width: 520px;
+  }
+  .section-head { margin-bottom: 64px; }
+
+  /* === DESTINATIONS (карточки появляются снизу) === */
+  .destinations { background: var(--sand); }
+  .dest-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+  }
+
+  .dest-card {
+    border-radius: 4px; overflow: hidden;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    opacity: 0; transform: translateY(40px);
+    transition: opacity 0.6s ease, transform 0.6s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+  }
+  .dest-card.visible { opacity: 1; transform: translateY(0); }
+  .dest-card:hover { box-shadow: 0 12px 40px rgba(26,20,16,0.12); }
+
+  .dest-img {
+    height: 220px; overflow: hidden; position: relative;
+  }
+  .dest-img img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+  .dest-card:hover .dest-img img { transform: scale(1.08); }
+  .dest-overlay {
+    position: absolute; inset: 0;
+    background: rgba(26,20,16,0.5);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.3s ease;
+  }
+  .dest-card:hover .dest-overlay { opacity: 1; }
+  .dest-overlay span {
+    color: #fff; font-size: 13px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 8px 20px; border: 1px solid rgba(255,255,255,0.6); border-radius: 2px;
+  }
+
+  .dest-info { padding: 20px 22px 24px; }
+  .dest-region { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--rust); margin-bottom: 6px; }
+  .dest-name { font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 8px; }
+  .dest-desc { font-size: 13px; color: var(--muted); line-height: 1.6; font-weight: 300; }
+
+  /* === VIDEO SECTION === */
+  .video-section {
+    background: var(--ink); color: var(--sand);
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 0; padding: 0;
+  }
+  .video-left { padding: 100px 60px; display: flex; flex-direction: column; justify-content: center; }
+  .video-left .section-tag { color: var(--rust-light); }
+  .video-left .section-title { color: var(--sand); }
+  .video-left .section-sub { color: rgba(245,239,224,0.6); }
+
+  .video-right {
+    position: relative; min-height: 500px; overflow: hidden;
+    background: #0d0b08;
+  }
+
+
+  /* === TIPS === */
+  .tips { background: var(--cream); }
+  .tips-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .tip-card {
+    padding: 32px 24px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    transition: border-color 0.3s ease, transform 0.3s ease;
+  }
+  .tip-card:hover { border-color: var(--rust); transform: translateY(-4px); }
+  .tip-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 40px; color: var(--rust); opacity: 0.2;
+    font-weight: 700; margin-bottom: 16px; line-height: 1;
+  }
+  .tip-title { font-size: 15px; font-weight: 500; margin-bottom: 8px; }
+  .tip-body { font-size: 13px; color: var(--muted); line-height: 1.65; font-weight: 300; }
+
+  /* === NEWSLETTER === */
+  .newsletter {
+    background: var(--rust);
+    color: #fff;
+    text-align: center;
+    padding: 80px 60px;
+  }
+  .newsletter .section-title { color: #fff; margin-bottom: 12px; }
+  .newsletter .section-sub { color: rgba(255,255,255,0.75); margin: 0 auto 36px; }
+  .nl-form { display: flex; gap: 0; max-width: 480px; margin: 0 auto; }
+  .nl-input {
+    flex: 1; padding: 14px 20px;
+    border: none; background: rgba(255,255,255,0.15);
+    color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14px;
+    border-radius: 3px 0 0 3px; outline: none;
+    transition: background 0.3s ease;
+  }
+  .nl-input::placeholder { color: rgba(255,255,255,0.5); }
+  .nl-input:focus { background: rgba(255,255,255,0.25); }
+  .nl-btn {
+    padding: 14px 28px;
+    background: var(--ink); color: var(--sand);
+    border: none; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+    cursor: pointer; border-radius: 0 3px 3px 0;
+    transition: background 0.3s ease;
+    position: relative; overflow: hidden;
+  }
+  .nl-btn:hover { background: #2e2620; }
+
+  /* === FOOTER === */
+  footer {
+    background: var(--ink); color: rgba(245,239,224,0.5);
+    padding: 48px 60px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px; color: var(--sand); letter-spacing: 0.04em;
+  }
+  footer p { font-size: 12px; }
+
+  /* === ANIMATIONS === */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 900px) {
+    nav { padding: 18px 24px; }
+    .nav-links { display: none; }
+    .burger { display: flex; }
+    .hero { grid-template-columns: 1fr; }
+    .hero-right { min-height: 320px; }
+    .hero-left { padding: 60px 24px 40px; }
+    section { padding: 60px 24px; }
+    .dest-grid { grid-template-columns: 1fr; }
+    .tips-grid { grid-template-columns: 1fr 1fr; }
+    .video-section { grid-template-columns: 1fr; }
+    .video-right { min-height: 280px; }
+    .video-left { padding: 60px 24px; }
+    footer { flex-direction: column; gap: 12px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- PRELOADER -->
+<div id="preloader">
+  <div class="preloader-logo">Wanderlust</div>
+  <div class="preloader-bar"></div>
+  <div class="preloader-dots">
+    <span></span><span></span><span></span>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">Wanderlust</a>
+  <ul class="nav-links">
+    <li><a href="#destinations">Destinations</a></li>
+    <li><a href="#stories">Stories</a></li>
+    <li><a href="#tips">Tips</a></li>
+    <li><a href="#newsletter">Subscribe</a></li>
+  </ul>
+  <button class="burger" id="burger" onclick="this.classList.toggle('open')">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <p class="hero-tag">Travel Blog — 2025 Edition</p>
+    <h1 class="hero-title">The world is<br><em>waiting</em> for you</h1>
+    <p class="hero-desc">Stories, photography and honest guides from 60+ countries. No sponsored fluff — just real adventures written by someone who keeps going back for more.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" id="exploreBtn">Explore stories</button>
+      <button class="btn-ghost">Watch film</button>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="hero-bg"></div>
+    <div class="hero-right-overlay"></div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">60+</div><div class="stat-label">Countries</div></div>
+      <div class="stat"><div class="stat-num">340</div><div class="stat-label">Stories</div></div>
+      <div class="stat"><div class="stat-num">12k</div><div class="stat-label">Readers</div></div>
+    </div>
+    <div class="scroll-hint">
+      <div class="scroll-line"></div>
+      <span>Scroll</span>
+    </div>
+  </div>
+</section>
+
+<!-- DESTINATIONS -->
+<section class="destinations" id="destinations">
+  <div class="section-head">
+    <p class="section-tag">Top picks</p>
+    <h2 class="section-title">Featured destinations</h2>
+    <p class="section-sub">Carefully chosen places that left a mark. Each one earned its spot through lived experience, not a press trip.</p>
+  </div>
+  <div class="dest-grid">
+    <div class="dest-card">
+      <div class="dest-img">
+        <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600&q=80" alt="Kyoto">
+        <div class="dest-overlay"><span>Read story</span></div>
+      </div>
+      <div class="dest-info">
+        <p class="dest-region">Asia · Japan</p>
+        <h3 class="dest-name">Kyoto in autumn</h3>
+        <p class="dest-desc">Maple leaves turning crimson along the Philosopher's Path. A city that refuses to rush.</p>
+      </div>
+    </div>
+    <div class="dest-card">
+      <div class="dest-img">
+        <img src="https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80" alt="Morocco">
+        <div class="dest-overlay"><span>Read story</span></div>
+      </div>
+      <div class="dest-info">
+        <p class="dest-region">Africa · Morocco</p>
+        <h3 class="dest-name">Lost in the Medina</h3>
+        <p class="dest-desc">Fez's labyrinthine streets smell of spice and leather. Getting lost was the best decision.</p>
+      </div>
+    </div>
+    <div class="dest-card">
+      <div class="dest-img">
+        <img src="https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=600&q=80" alt="Iceland">
+        <div class="dest-overlay"><span>Read story</span></div>
+      </div>
+      <div class="dest-info">
+        <p class="dest-region">Europe · Iceland</p>
+        <h3 class="dest-name">Chasing northern lights</h3>
+        <p class="dest-desc">Three nights in a glass cabin waiting for the sky to dance. Worth every sleepless hour.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VIDEO SECTION -->
+<section class="video-section" id="stories">
+  <div class="video-left">
+    <p class="section-tag">Mini documentary</p>
+    <h2 class="section-title">Six months on the road</h2>
+    <p class="section-sub">A short film about slow travel — what it means to live somewhere instead of just visiting it. Filmed across Portugal, Georgia and Peru.</p>
+    <div style="margin-top: 36px;">
+      <button class="btn-ghost" style="border-color: rgba(245,239,224,0.25); color: var(--sand);">Read the full story</button>
+    </div>
+  </div>
+  <div class="video-right">
+    <video autoplay muted loop playsinline
+      style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.85;">
+      <source src="https://cdn.pixabay.com/video/2024/03/31/206294_large.mp4" type="video/mp4">
+    </video>
+  </div>
+</section>
+
+<!-- TIPS -->
+<section class="tips" id="tips">
+  <div class="section-head">
+    <p class="section-tag">Practical guides</p>
+    <h2 class="section-title">Before you go</h2>
+    <p class="section-sub">Hard-won lessons distilled into actionable tips. Skip the mistakes, keep the adventures.</p>
+  </div>
+  <div class="tips-grid">
+    <div class="tip-card">
+      <div class="tip-num">01</div>
+      <h3 class="tip-title">Pack half, travel twice as far</h3>
+      <p class="tip-body">Everything fits in a 30L backpack. You'll thank yourself on every bus, train and mountain path.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-num">02</div>
+      <h3 class="tip-title">Book the first night only</h3>
+      <p class="tip-body">Arrive knowing where you'll sleep. After that, let conversations and weather decide the plan.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-num">03</div>
+      <h3 class="tip-title">Learn 10 words per country</h3>
+      <p class="tip-body">Hello, thank you, please, how much, and delicious. Doors open that otherwise stay shut.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-num">04</div>
+      <h3 class="tip-title">Slow down at 70% speed</h3>
+      <p class="tip-body">Cut your itinerary by 30%. The empty hours are where the real travel actually happens.</p>
+    </div>
+  </div>
+</section>
+
+<!-- NEWSLETTER -->
+<section class="newsletter" id="newsletter">
+  <p class="section-tag" style="color:rgba(255,255,255,0.6)">Stay in the loop</p>
+  <h2 class="section-title">One email. Every two weeks.</h2>
+  <p class="section-sub">New stories, hidden spots, and honest gear reviews — delivered without noise.</p>
+  <div class="nl-form">
+    <input class="nl-input" type="email" placeholder="your@email.com">
+    <button class="nl-btn" id="nlBtn">Subscribe</button>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Wanderlust</div>
+  <p>© 2025 Wanderlust Travel Blog. All rights reserved.</p>
+  <p style="font-size:12px">Made with CSS animations ✦</p>
+</footer>
+
+<script>
+  // === PRELOADER ===
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.getElementById('preloader').classList.add('hidden');
+    }, 2500);
+  });
+
+  // === RIPPLE BUTTON ===
+  document.getElementById('exploreBtn').addEventListener('click', function(e) {
+    const r = document.createElement('span');
+    r.className = 'ripple-effect';
+    const rect = this.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+    this.appendChild(r);
+    r.addEventListener('animationend', () => r.remove());
+    setTimeout(() => document.getElementById('destinations').scrollIntoView({behavior:'smooth'}), 300);
+  });
+
+  // === RIPPLE NEWSLETTER ===
+  document.getElementById('nlBtn').addEventListener('click', function(e) {
+    const r = document.createElement('span');
+    r.className = 'ripple-effect';
+    const rect = this.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+    this.appendChild(r);
+    r.addEventListener('animationend', () => r.remove());
+  });
+
+  // === INTERSECTION OBSERVER — карточки появляются снизу ===
+  const cards = document.querySelectorAll('.dest-card');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, idx) => {
+      if (entry.isIntersecting) {
+        const i = [...cards].indexOf(entry.target);
+        setTimeout(() => entry.target.classList.add('visible'), i * 150);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  cards.forEach(c => observer.observe(c));
+</script>
+</body>
+</html>
